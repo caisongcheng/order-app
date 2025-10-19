@@ -1,66 +1,202 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>点单小程序（网页版）</title>
-<style>
-body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial; background:#f6f6f6; margin:0}
-.app{max-width:640px;margin:0 auto;padding:12px}
-.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
-.row{display:flex;justify-content:space-between;align-items:center}
-.btn{background:#1AAD19;color:#fff;padding:8px 12px;border-radius:8px;border:none}
-.small{color:#888;font-size:13px}
-.menu-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f1f1}
-.cart-list{list-style:none;padding:0;margin:0}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>点单小程序（网页版）</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial;
+      background: #f6f6f6;
+      margin: 0;
+    }
+    .app { max-width: 640px; margin: 0 auto; padding: 12px; }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .row { display: flex; justify-content: space-between; align-items: center; }
+    .btn {
+      background: #1AAD19;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    .small { color: #888; font-size: 13px; }
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f1f1;
+    }
+    .cart-list { list-style: none; padding: 0; margin: 0; }
+  </style>
 </head>
 <body>
-<div class="app">
-<div class="card">
-<div class="row"><h3>菜单</h3><button id="openCart" class="btn">查看购物车 (<span id="cartCount">0</span>)</button></div>
-<div id="menu"></div>
-</div>
+  <div class="app">
+    <div class="card">
+      <div class="row">
+        <h3>菜单</h3>
+        <button id="openCart" class="btn">查看购物车 (<span id="cartCount">0</span>)</button>
+      </div>
+      <div id="menu"></div>
+    </div>
 
+    <div id="cartPanel" class="card" style="display:none">
+      <div class="row">
+        <h3>购物车</h3>
+        <button id="closeCart" class="btn">关闭</button>
+      </div>
+      <ul id="cartList" class="cart-list"></ul>
+      <div class="row" style="margin-top:12px">
+        <div>总计：<span id="totalPrice">0</span> 元</div>
+        <button id="checkoutBtn" class="btn">下单</button>
+      </div>
+    </div>
 
-<div id="cartPanel" class="card" style="display:none">
-<div class="row"><h3>购物车</h3><button id="closeCart" class="btn">关闭</button></div>
-<ul id="cartList" class="cart-list"></ul>
-<div class="row" style="margin-top:12px"><div>总计：<span id="totalPrice">0</span> 元</div><button id="checkoutBtn" class="btn">下单</button></div>
-</div>
-
-
-<div id="orderPanel" class="card" style="display:none">
-<h3>订单详情</h3>
-<div id="orderContent"></div>
-</div>
-
-
-</div>
-
+    <div id="orderPanel" class="card" style="display:none">
+      <h3>订单详情</h3>
+      <div id="orderContent"></div>
+    </div>
+  </div>
 
 <script>
 (function(){
-const MENU = [
-{id:1,name:'经典汉堡',price:25},
-{id:2,name:'炸鸡套餐',price:30},
-{id:3,name:'薯条',price:10},
-{id:4,name:'可乐',price:6}
-];
-const KEY = 'PWA_ORDER_CART_v1';
-function readCart(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; } }
-function saveCart(c){ localStorage.setItem(KEY, JSON.stringify(c)); renderCartCount(); }
-function renderMenu(){ const el = document.getElementById('menu'); el.innerHTML = MENU.map(it=> `<div class="menu-item"><div><strong>${it.name}</strong><div class="small">${it.price} 元</div></div><div><button data-id="${it.id}" class="btn add">加入</button></div></div>`).join('');
-el.querySelectorAll('.add').forEach(b=> b.addEventListener('click', e=>{
-const id = +e.currentTarget.dataset.id;
-const item = MENU.find(m=>m.id===id); let cart = readCart(); const ex = cart.find(c=>c.id===id);
-if(ex) ex.count++; else cart.push({...item,count:1}); saveCart(cart); alert('已加入购物车');
-}));
-}
-function renderCartCount(){ const c = readCart().reduce((s,i)=> s+i.count,0); document.getElementById('cartCount').textContent = c; }
-function openCart(){ const panel = document.getElementById('cartPanel'); panel.style.display='block'; renderCartPanel(); }
-function closeCart(){ document.getElementById('cartPanel').style.display='none'; }
-function renderCartPanel(){ const cart = readCart(); const list = document.getElementById('cartList'); list.innerHTML = cart.map(it=>`<li style="padding:8px 0;border-bottom:1px solid #f1f1f1"><div class="row"><div><strong>${it.name}</strong><div class="small">单价 ${it.price} 元</div></div><div><button data-id="${it.id}" class="btn minus">-</button><span style="margin:0 8px">${it.count}</span><button data-id="${it.id}" class="btn plus">+</button></div></div></li>`).join('')||'<li class="small">购物车空</li>';
-document.getElementById('totalPrice').textContent = cart.reduce((s,i)=> s+i.price*i.count,0);
-list.querySelectorAll('.plus').forEach(b=> b.addEventListener('click', e=>{ const id=+e.currentTarget.dataset.id; const cart=readCart(); cart.find(x=>x.id===id).count++; saveCart(cart); renderCartPanel(); }));
-list.querySelectorAll('.minus').forEach(b=> b.addEventListener('click', e=>{ const id=+e.currentTarget.dataset.id; let cart=readCart(); const it=cart.find(x=>x.id===id); it.count--; if(it.count<=0) cart=cart.filter(x=>x.id!==id); saveCart(cart); renderCartPanel(); }
+  const MENU = [
+    {id:1, name:'经典汉堡', price:25},
+    {id:2, name:'炸鸡套餐', price:30},
+    {id:3, name:'薯条', price:10},
+    {id:4, name:'可乐', price:6}
+  ];
+  const KEY = 'PWA_ORDER_CART_v1';
+
+  function readCart() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); }
+    catch(e) { return []; }
+  }
+  function saveCart(c) {
+    localStorage.setItem(KEY, JSON.stringify(c));
+    renderCartCount();
+  }
+
+  function renderMenu() {
+    const el = document.getElementById('menu');
+    el.innerHTML = MENU.map(it =>
+      `<div class="menu-item">
+        <div><strong>${it.name}</strong><div class="small">${it.price} 元</div></div>
+        <div><button data-id="${it.id}" class="btn add">加入</button></div>
+      </div>`
+    ).join('');
+    el.querySelectorAll('.add').forEach(b =>
+      b.addEventListener('click', e => {
+        const id = +e.currentTarget.dataset.id;
+        const item = MENU.find(m => m.id === id);
+        let cart = readCart();
+        const ex = cart.find(c => c.id === id);
+        if (ex) ex.count++;
+        else cart.push({ ...item, count: 1 });
+        saveCart(cart);
+        alert('已加入购物车');
+      })
+    );
+  }
+
+  function renderCartCount() {
+    const c = readCart().reduce((s, i) => s + i.count, 0);
+    document.getElementById('cartCount').textContent = c;
+  }
+
+  function openCart() {
+    document.getElementById('cartPanel').style.display = 'block';
+    renderCartPanel();
+  }
+
+  function closeCart() {
+    document.getElementById('cartPanel').style.display = 'none';
+  }
+
+  function renderCartPanel() {
+    const cart = readCart();
+    const list = document.getElementById('cartList');
+    list.innerHTML = cart.map(it =>
+      `<li style="padding:8px 0;border-bottom:1px solid #f1f1f1">
+        <div class="row">
+          <div><strong>${it.name}</strong><div class="small">单价 ${it.price} 元</div></div>
+          <div>
+            <button data-id="${it.id}" class="btn minus">-</button>
+            <span style="margin:0 8px">${it.count}</span>
+            <button data-id="${it.id}" class="btn plus">+</button>
+          </div>
+        </div>
+      </li>`
+    ).join('') || '<li class="small">购物车空</li>';
+
+    document.getElementById('totalPrice').textContent =
+      cart.reduce((s, i) => s + i.price * i.count, 0);
+
+    list.querySelectorAll('.plus').forEach(b =>
+      b.addEventListener('click', e => {
+        const id = +e.currentTarget.dataset.id;
+        const cart = readCart();
+        cart.find(x => x.id === id).count++;
+        saveCart(cart);
+        renderCartPanel();
+      })
+    );
+
+    list.querySelectorAll('.minus').forEach(b =>
+      b.addEventListener('click', e => {
+        const id = +e.currentTarget.dataset.id;
+        let cart = readCart();
+        const it = cart.find(x => x.id === id);
+        it.count--;
+        if (it.count <= 0) cart = cart.filter(x => x.id !== id);
+        saveCart(cart);
+        renderCartPanel();
+      })
+    );
+  }
+
+  function checkout() {
+    const cart = readCart();
+    if (cart.length === 0) { alert('购物车为空'); return; }
+    const order = { created: Date.now(), items: cart };
+    localStorage.setItem('LAST_ORDER', JSON.stringify(order));
+    localStorage.removeItem(KEY);
+    document.getElementById('cartPanel').style.display = 'none';
+    showOrder(order);
+    renderCartCount();
+  }
+
+  function showOrder(order) {
+    const panel = document.getElementById('orderPanel');
+    panel.style.display = 'block';
+    const c = document.getElementById('orderContent');
+    const t = new Date(order.created);
+    const total = order.items.reduce((s, i) => s + i.price * i.count, 0);
+    c.innerHTML =
+      `<div class="small">下单时间：${t.toLocaleString()}</div>` +
+      order.items.map(it =>
+        `<div style="margin-top:8px">${it.name} x ${it.count} — ${it.price * it.count} 元</div>`
+      ).join('') +
+      `<div style="margin-top:12px">总计：${total} 元</div>`;
+  }
+
+  document.getElementById('openCart').addEventListener('click', openCart);
+  document.getElementById('closeCart').addEventListener('click', closeCart);
+  document.getElementById('checkoutBtn').addEventListener('click', checkout);
+
+  renderMenu();
+  renderCartCount();
+
+  const last = localStorage.getItem('LAST_ORDER');
+  if (last) showOrder(JSON.parse(last));
+})();
+</script>
+</body>
+</html>
